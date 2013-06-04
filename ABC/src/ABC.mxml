@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)"
+					   minWidth="1024" minHeight="768" >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="admin" />
+	</s:states>
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.ByteArrayAsset;
+			import mx.events.CloseEvent;
+			import mx.events.FileEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.TitleWindow;
+			
+			import components.LoginWindow;
+			
+			import vo.CardVO;
+			
+			[Bindable]
+			private var abcArray:ArrayCollection = new ArrayCollection();
+			
+			private var card:CardVO;
+			
+			private var _altKeyFlag:Boolean;
+			
+			private var _selectedCard:CardVO = new CardVO();
+			
+			private var stream:FileStream;
+			
+			private var assetFile:File;
+			
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.nativeWindow.maximize();
+				this.nativeWindow.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDownHandler);
+				this.nativeWindow.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUpHandler);
+				
+				abcList.addEventListener(MouseEvent.CLICK, onListClickHandler);
+				abcList.addEventListener("editImage", onEditImageClickHandler);
+				
+				var descrFile:File =  File.applicationDirectory.resolvePath("assets/main/descr.xml");
+				stream = new FileStream();
+				stream.open(descrFile, FileMode.READ);
+				var descrXML:XML = new XML(stream.readUTFBytes(stream.bytesAvailable));
+				stream.close();
+				
+				var letters:XMLList = descrXML.letter;
+				
+				for each (var letter:XML in letters)
+				{
+					card = new CardVO();
+					
+					card.upper = letter.upper;
+					card.lower = letter.lower;
+					card.description = letter.description;
+					card.preview = "assets/main/images/" + letter.preview;
+					card.soundLetterStart = Number(letter.sounds.letter.start);
+					card.soundLetterStop = Number(letter.sounds.letter.stop);
+					
+					abcArray.addItem(card);
+				}
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				abcList.removeEventListener(MouseEvent.CLICK, onPlayGameClickHandler);
+				abcList.removeEventListener(MouseEvent.CLICK, onLearnLettersClickHandler);
+				if (currentState == "normal")
+				{
+					if (this.learnLetters.selected)
+					{
+						abcList.addEventListener(MouseEvent.CLICK, onLearnLettersClickHandler);
+					}
+					else if (this.playGame.selected)
+					{
+						abcList.addEventListener(MouseEvent.CLICK, onPlayGameClickHandler);
+					}
+				}
+				
+				abcList.width = abcList.minWidth = unscaledWidth;
+			}
+			
+			protected function onLearnLettersClickHandler(event:MouseEvent):void
+			{
+				var selectedCard:CardVO = (event.currentTarget as List).selectedItem as CardVO;
+				if (selectedCard)
+				{
+					var snd:Sound = new Sound(new URLRequest("assets/main/sounds/full_abc.mp3")); 
+					var trans:SoundTransform = new SoundTransform(0.3, 0);
+					var sChannel:SoundChannel = snd.play(selectedCard.soundLetterStart, 0, trans);
+					setTimeout(function ():void 
+					{
+						sChannel.stop()
+					}, selectedCard.soundLetterStop - selectedCard.soundLetterStart); 	
+				}
+			}
+			
+			protected function onPlayGameClickHandler(event:MouseEvent):void
+			{
+				trace("Yo!")
+			}
+			
+			override protected function getCurrentSkinState():String
+			{
+				return "normal";
+			}
+			
+			protected function onKeyDownHandler(event:KeyboardEvent):void
+			{
+				if (event.altKey)
+				{
+					_altKeyFlag = true;
+				}
+			}
+			
+			protected function onKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (_altKeyFlag && event.keyCode == Keyboard.A)
+				{
+					var loginWindod:TitleWindow =
+						PopUpManager.createPopUp(this, LoginWindow, true) as TitleWindow;
+					PopUpManager.centerPopUp(loginWindod);	
+					
+					loginWindod.addEventListener(CloseEvent.CLOSE, function ():void
+					{
+						PopUpManager.removePopUp(loginWindod);
+					});
+					loginWindod.addEventListener("correctPassw", function ():void
+					{
+						PopUpManager.removePopUp(loginWindod);
+						currentState = "admin";
+					});
+				}
+				
+				if (event.altKey)
+				{
+					_altKeyFlag = false;
+				}
+				
+			}
+			
+			protected function onListClickHandler(event:MouseEvent):void
+			{
+				_selectedCard = (event.currentTarget as List).selectedItem as CardVO;
+			}
+			
+			
+			protected function onEditImageClickHandler(event:Event):void
+			{
+				var ref:FileReference = new FileReference();
+				
+				ref.addEventListener(Event.SELECT, onImageSelectComplete);
+				ref.browse([new FileFilter("Image", "*.jpg;*.png")]);
+			}
+			
+			protected function onImageSelectComplete(event:Event):void
+			{
+				event;
+				copyImage();
+				//				updateXML();
+			}
+			
+			private function copyImage():void
+			{
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup left="20" right="20" bottom="20" top="20">
+		<s:HGroup>
+			<s:RadioButton id="learnLetters" label="Слухати букви" selected="true" />
+			<s:RadioButton id="playGame" label="Грати у запитання" />
+		</s:HGroup>
+		<s:List id="abcList" dataProvider="{abcArray}" borderVisible="false"
+				width="100%" verticalScrollPolicy="on"
+				itemRenderer.normal="itemrenderers.CardListTileItemRenderer"
+				itemRenderer.admin="itemrenderers.CardListTileItemRendererAdmin"
+				>
+			<s:layout>
+				<s:TileLayout  />
+			</s:layout>
+		</s:List>
+	</s:VGroup>
+	
+	
+	
+</s:WindowedApplication>

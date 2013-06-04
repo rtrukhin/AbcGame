@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   title="Password"
+			   width="300" height="110">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.setTimeout;
+			
+			protected function submitClickHandler(event:MouseEvent):void
+			{
+				if (pasw.text === "111")
+				{
+					dispatchEvent(new Event("correctPassw", true));
+				}
+				else
+				{
+					validation.text = "Try again!";
+					setTimeout(function ():void
+					{
+						validation.text = pasw.text = "";
+					}, 2000
+					);
+					
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:VGroup horizontalAlign="center" paddingTop="10" width="100%">
+		<s:TextInput id="pasw" displayAsPassword="true" width="90%"  paddingTop="10" prompt="Input password" />
+		<s:HGroup width="90%">
+			<s:Label id="validation" color="#ff0000" fontSize="14" width="90%"/>
+			<s:Button id="submit" label="Submit" right="0" click="submitClickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:TitleWindow>

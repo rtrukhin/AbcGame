@@ -6,6 +6,7 @@
 	<fx:Script>
 		<![CDATA[
 			import vo.CardVO;
+			
 		]]>
 	</fx:Script>
 	
@@ -16,7 +17,8 @@
 	</s:Rect>
 	
 	<s:Group>
-		<s:Image source="{(data as CardVO).preview}" width="200" height="200"/>
+		<s:Image source="{File.applicationStorageDirectory.resolvePath((data as CardVO).preview)}" width="200" height="200"/>
+			<s:Label text="{(data as CardVO).preview}"/>
 		<s:HGroup gap="10" fontSize="60" color="#ffffff" bottom="0" right="10">
 			<s:Label text="{(data as CardVO).upper}"/>
 			<s:Label text="{(data as CardVO).lower}"/>

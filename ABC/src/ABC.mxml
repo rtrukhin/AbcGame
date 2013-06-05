@@ -42,6 +42,15 @@
 			private var stream:FileStream;
 			
 			private var assetFile:File;
+
+			private var loader:URLLoader;
+
+			private var descrXML:XML;
+
+			private var descriptionFile:File;
+
+			private var imagesFile:File;
+
 			
 			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
 			{
@@ -53,9 +62,17 @@
 				abcList.addEventListener("editImage", onEditImageClickHandler);
 				
 				var descrFile:File =  File.applicationDirectory.resolvePath("assets/main/descr.xml");
+				var imagesDir:File =  File.applicationDirectory.resolvePath("assets/main/images/");
+				
+				descriptionFile = File.applicationStorageDirectory.resolvePath("descr.xml");
+				imagesFile = File.applicationStorageDirectory.resolvePath("assets/main/images/");
+				
+				descrFile.copyTo(descriptionFile, true);
+				imagesDir.copyTo(imagesFile, true);
+				
 				stream = new FileStream();
-				stream.open(descrFile, FileMode.READ);
-				var descrXML:XML = new XML(stream.readUTFBytes(stream.bytesAvailable));
+				stream.open(descriptionFile, FileMode.READ);
+				descrXML = new XML(stream.readUTFBytes(stream.bytesAvailable));
 				stream.close();
 				
 				var letters:XMLList = descrXML.letter;
@@ -73,6 +90,7 @@
 					
 					abcArray.addItem(card);
 				}
+				
 			}
 			
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
@@ -161,22 +179,37 @@
 			
 			protected function onEditImageClickHandler(event:Event):void
 			{
-				var ref:FileReference = new FileReference();
+				var myFile:File = new File();
+				myFile.browseForOpen("Open", [new FileFilter("Image", "*.jpg;*.png")]);
 				
-				ref.addEventListener(Event.SELECT, onImageSelectComplete);
-				ref.browse([new FileFilter("Image", "*.jpg;*.png")]);
+				myFile.addEventListener(Event.SELECT, onImageSelectComplete);
 			}
 			
 			protected function onImageSelectComplete(event:Event):void
 			{
-				event;
-				copyImage();
+				var source:File = new File((event.target as File).nativePath);
+				var images:File = File.applicationDirectory.resolvePath(_selectedCard.preview).parent;
+				var dest:File = File.applicationDirectory.resolvePath(images.nativePath + File.separator + source.name);
+				
+				var sourceFileName:String = File.applicationDirectory.resolvePath(_selectedCard.preview).name;
+				
+				if (source.exists && dest.exists)
+				{
+					source.copyTo(dest);
+				}
+				
+				var previewNode:XMLList = descrXML.letter.(preview == sourceFileName);
+				previewNode.preview = source.name;
+				
+				stream.open(descriptionFile, FileMode.WRITE);
+				stream.writeUTFBytes(descrXML.toXMLString());
+				stream.close();
+				
 				//				updateXML();
 			}
 			
-			private function copyImage():void
+			private function imgLoaded():void
 			{
-				
 			}
 			
 		]]>
